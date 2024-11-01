@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "text-sharpener"
+version = "0.1.0"
+description = ""
+authors = ["ericxia1220 <ericxia1220@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.10.12"
+bing-image-downloader = "1.1.2"
+pillow = "11.0.0"
+easyocr = "1.7.2"
+boto3 = "^1.35.52"
+matplotlib = "^3.9.2"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
