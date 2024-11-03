@@ -3,9 +3,9 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms.functional as TF 
 
-class DoubeConv(nn.Module): 
+class DoubleConv(nn.Module): 
     def __init__(self, in_channels, out_channels):
-        super(DoubeConv, self).__init__()
+        super(DoubleConv, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -27,17 +27,16 @@ class UNet(nn.Module):
 
         # Down part of UNet
         for feature in features:
-            self.downs.append(DoubeConv(in_channels, feature))
+            self.downs.append(DoubleConv(in_channels, feature))
             in_channels = feature
         
         # Up part of UNet
         for feature in reversed(features):
-            # Bilinear upsampling (non-learnable)
-            self.ups.append(nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True))
-            # Convolution layer to refine features after upsampling
-            self.ups.append(DoubeConv(feature * 2, feature))  # *2 for concatenated skip connections
+            # TODO: check if bilinear upsampling is better
+            self.ups.append(nn.ConvTranspose2d(feature * 2, feature, kernel_size=2, stride=2))
+            self.ups.append(DoubleConv(feature * 2, feature))
 
-        self.bottleneck = DoubeConv(features[-1], features[-1] * 2)
+        self.bottleneck = DoubleConv(features[-1], features[-1] * 2)
         self.final_conv = nn.Conv2d(features[0], out_channels, kernel_size=1)
 
     def forward(self, x):
@@ -59,3 +58,11 @@ class UNet(nn.Module):
             x = self.ups[idx+1](concat_skip)
     
         return self.final_conv(x)
+    
+def test():
+    x = torch.randn(3, 3, 256, 256)
+    model = UNet()
+    print(model(x).shape)
+
+if __name__ == "__main__":
+    test()
