@@ -1,4 +1,5 @@
 /data/
 /scratch/
+/checkpoints/
 .DS_Store
 **/__pycache__/
