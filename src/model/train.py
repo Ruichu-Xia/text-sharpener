@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,10 +9,11 @@ import os
 
 from src.model.u_net import UNet
 from src.data_pipeline.dataset import LocalImageDataset, get_split_indices
-from config import INPUT_DIR, TARGET_DIR, NUM_CHANNELS, FEATURES, NUM_EPOCHS, LEARNING_RATE, BATCH_SIZE, get_device
+from src.model.utils import INPUT_DIR, TARGET_DIR, NUM_CHANNELS, FEATURES, NUM_EPOCHS, LEARNING_RATE, MOMENTUM, WEIGHT_DECAY, BATCH_SIZE, TEXT_WEIGHT, get_device
+from src.model.custom_loss import text_accuracy_loss
 
      
-def train_model(model, train_loader, optimizer, criterion, device): 
+def train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, text_weight, device): 
     model.train()
     loop = tqdm(train_loader, leave=True)
     total_loss = 0
@@ -20,8 +22,9 @@ def train_model(model, train_loader, optimizer, criterion, device):
         input_images = input_images.to(device)
         target_images = target_images.to(device)
 
-        outputs = model(input_images)
-        loss = criterion(outputs, target_images)
+        output_images = model(input_images)
+
+        loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
 
         optimizer.zero_grad()
         loss.backward()
@@ -33,7 +36,7 @@ def train_model(model, train_loader, optimizer, criterion, device):
     avg_train_loss = total_loss / len(loop)
     return avg_train_loss
 
-def validate_model(model, val_loader, criterion, device): 
+def validate_model(model, val_loader, reconstruction_loss, text_accuracy_loss, text_weight, device): 
     model.eval()  
     total_val_loss = 0
 
@@ -42,8 +45,8 @@ def validate_model(model, val_loader, criterion, device):
             input_images = input_images.to(device)
             target_images = target_images.to(device)
 
-            outputs = model(input_images)
-            loss = criterion(outputs, target_images)
+            output_images = model(input_images)
+            loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
             total_val_loss += loss.item()
 
     avg_val_loss = total_val_loss / len(val_loader)
@@ -64,8 +67,10 @@ def save_checkpoint(model, optimizer, epoch, val_loss, checkpoint_dir="checkpoin
 def main(): 
     device = get_device()
     model = UNet(in_channels=NUM_CHANNELS, out_channels=NUM_CHANNELS, features=FEATURES).to(device)
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    reconstruction_loss = nn.MSELoss()
+    optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
+    
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=2)
 
     num_images = len([f for f in os.listdir(INPUT_DIR) if f.endswith(('.jpg', '.png', '.jpeg', '.webp'))])
     # num_images = 1200
@@ -79,13 +84,16 @@ def main():
     checkpoint_dir = "checkpoints"
 
     for epoch in range(1, NUM_EPOCHS + 1): 
-        avg_train_loss = train_model(model, train_loader, optimizer, criterion, device)
-        avg_val_loss = validate_model(model, val_loader, criterion, device)
-        print(f"Epoch [{epoch}/{NUM_EPOCHS}] - Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+        avg_train_loss = train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, TEXT_WEIGHT, device)
+        avg_val_loss = validate_model(model, val_loader, reconstruction_loss, text_accuracy_loss, TEXT_WEIGHT, device)
+        current_lr = scheduler.get_last_lr()[0]
+        print(f"Epoch [{epoch}/{NUM_EPOCHS}] - Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}, LR: {current_lr:.6f}")
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             save_checkpoint(model, optimizer, epoch, best_val_loss, checkpoint_dir)
+        
+        scheduler.step(avg_val_loss)
 
 if __name__ == "__main__":
     main()
