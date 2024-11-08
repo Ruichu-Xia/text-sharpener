@@ -17,6 +17,12 @@ def text_accuracy_loss(output_images, target_images):
         output_current = output_image_numpy[i]
         target_current = target_image_numpy[i]
 
+        print(f"Type of output_current: {type(output_current)}")
+        print(f"Shape of output_current: {output_current.shape if hasattr(output_current, 'shape') else 'No shape attribute'}")
+
+        print(f"Type of target_current: {type(target_current)}")
+        print(f"Shape of target_current: {target_current.shape if hasattr(target_current, 'shape') else 'No shape attribute'}")
+
         output_text = " ".join(reader.readtext(output_current, detail=0))
         target_text = " ".join(reader.readtext(target_current, detail=0))
 
