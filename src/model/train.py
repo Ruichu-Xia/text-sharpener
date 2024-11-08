@@ -23,7 +23,7 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, text_accura
         input_images = input_images.to(device)
         target_images = target_images.to(device)
 
-        with autocast(enabled=True, device_type = "cuda"):
+        with autocast():
             output_images = model(input_images)
             loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
 
@@ -71,7 +71,7 @@ def main():
     model = UNet(in_channels=NUM_CHANNELS, out_channels=NUM_CHANNELS, features=FEATURES).to(device)
     reconstruction_loss = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
-    scaler = GradScaler("cuda")
+    scaler = GradScaler()
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=2)
 
     num_images = len([f for f in os.listdir(INPUT_DIR) if f.endswith(('.jpg', '.png', '.jpeg', '.webp'))])
