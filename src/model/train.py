@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 import os
 
@@ -17,18 +18,20 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, text_accura
     model.train()
     loop = tqdm(train_loader, leave=True)
     total_loss = 0
+    scaler = torch.amp.GradScaler('cuda')
 
     for input_images, target_images in loop: 
         input_images = input_images.to(device)
         target_images = target_images.to(device)
 
-        output_images = model(input_images)
-
-        loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
+        with autocast('cuda'):
+            output_images = model(input_images)
+            loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
 
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         loop.set_postfix(loss=loss.item())  
 
