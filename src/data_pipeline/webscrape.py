@@ -1,5 +1,5 @@
 from bing_image_downloader import downloader
-from utils import IMAGE_QUERIES, RAW_IMAGE_DIR, NUM_PER_QUERY
+from src.data_pipeline.utils import IMAGE_QUERIES, RAW_IMAGE_DIR, NUM_PER_QUERY
 
 def main(): 
 
@@ -8,3 +8,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

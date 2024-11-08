@@ -15,6 +15,7 @@ boto3 = "^1.35.52"
 matplotlib = "^3.9.2"
 tqdm = "^4.66.6"
 scikit-learn = "^1.5.2"
+torch = "2.5.0"
 
 
 [tool.poetry.group.dev.dependencies]

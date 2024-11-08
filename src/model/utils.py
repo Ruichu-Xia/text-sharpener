@@ -20,3 +20,8 @@ def get_device():
 
 def rescale_and_convert_image(image): 
     return (image.permute(0, 2, 3, 1).detach().cpu().numpy() * 255.0).astype(np.uint8)
+
+
+
+
+

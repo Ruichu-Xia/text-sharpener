@@ -14,17 +14,16 @@ from src.model.utils import INPUT_DIR, TARGET_DIR, NUM_CHANNELS, FEATURES, NUM_E
 from src.model.custom_loss import text_accuracy_loss
 
      
-def train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, text_weight, device): 
+def train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, text_weight, scaler, device): 
     model.train()
     loop = tqdm(train_loader, leave=True)
     total_loss = 0
-    scaler = torch.amp.GradScaler('cuda')
 
     for input_images, target_images in loop: 
         input_images = input_images.to(device)
         target_images = target_images.to(device)
 
-        with autocast('cuda'):
+        with autocast("cuda"):
             output_images = model(input_images)
             loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
 
@@ -72,7 +71,7 @@ def main():
     model = UNet(in_channels=NUM_CHANNELS, out_channels=NUM_CHANNELS, features=FEATURES).to(device)
     reconstruction_loss = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
-    
+    scaler = GradScaler("cuda")
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=2)
 
     num_images = len([f for f in os.listdir(INPUT_DIR) if f.endswith(('.jpg', '.png', '.jpeg', '.webp'))])
@@ -87,7 +86,7 @@ def main():
     checkpoint_dir = "checkpoints"
 
     for epoch in range(1, NUM_EPOCHS + 1): 
-        avg_train_loss = train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, TEXT_WEIGHT, device)
+        avg_train_loss = train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, TEXT_WEIGHT, scaler, device)
         avg_val_loss = validate_model(model, val_loader, reconstruction_loss, text_accuracy_loss, TEXT_WEIGHT, device)
         current_lr = scheduler.get_last_lr()[0]
         print(f"Epoch [{epoch}/{NUM_EPOCHS}] - Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}, LR: {current_lr:.6f}")

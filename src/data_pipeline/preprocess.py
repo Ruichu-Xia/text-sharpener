@@ -1,4 +1,4 @@
-from utils import IMAGE_QUERIES, RAW_IMAGE_DIR, PROCESSED_IMAGE_DIR, NUM_PER_QUERY, IMAGE_SIZE
+from src.data_pipeline.utils import IMAGE_QUERIES, RAW_IMAGE_DIR, PROCESSED_IMAGE_DIR, NUM_PER_QUERY, IMAGE_SIZE
 from PIL import Image
 import numpy as np
 import os

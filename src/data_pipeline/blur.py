@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from PIL import Image
 import os
-from utils import PROCESSED_IMAGE_DIR, BLURRED_IMAGE_DIR
+from src.data_pipeline.utils import PROCESSED_IMAGE_DIR, BLURRED_IMAGE_DIR
 
 # gaussian blur, motion blur, speckle noise, jpeg compression artifact
 def apply_gaussian_blur(image: Image.Image) -> Image.Image:
