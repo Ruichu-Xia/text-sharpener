@@ -23,7 +23,7 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, text_accura
         input_images = input_images.to(device)
         target_images = target_images.to(device)
 
-        with autocast("cuda"):
+        with autocast(enabled=True, device_type = "cuda"):
             output_images = model(input_images)
             loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
 
