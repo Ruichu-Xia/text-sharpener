@@ -25,7 +25,8 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, text_accura
 
         with autocast():
             output_images = model(input_images)
-            loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
+            
+        loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
 
         optimizer.zero_grad()
         scaler.scale(loss).backward()
