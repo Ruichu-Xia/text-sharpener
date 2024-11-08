@@ -25,7 +25,9 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, text_accura
         if device.type == 'cuda': 
             with torch.autocast(device_type=str(device), dtype=torch.float16):
                 output_images = model(input_images)
-            loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
+                rec_loss = reconstruction_loss(output_images, target_images) 
+            text_loss = text_weight * text_accuracy_loss(output_images, target_images).half()
+            loss = rec_loss + text_loss
         else: 
             output_images = model(input_images)
             loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
