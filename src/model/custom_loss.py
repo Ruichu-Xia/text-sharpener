@@ -23,7 +23,7 @@ def text_accuracy_loss(output_images, target_images):
 
         loss += 1 - SequenceMatcher(None, output_text, target_text).ratio()
 
-    return torch.tensor(loss / batch_size, dtype=torch.float32, device=target_images.device)
+    return torch.tensor(loss / batch_size, dtype=torch.float32, device=device)
 
 
 
