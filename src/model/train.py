@@ -7,13 +7,14 @@ from tqdm import tqdm
 import os
 
 
-from src.model.u_net import UNet
+from src.model.unet import UNet
+from src.model.cbam_unet import UNetWithCBAM
 from src.data_pipeline.dataset import LocalImageDataset, get_split_indices
-from src.model.utils import INPUT_DIR, TARGET_DIR, NUM_CHANNELS, FEATURES, NUM_EPOCHS, LEARNING_RATE, MOMENTUM, WEIGHT_DECAY, BATCH_SIZE, TEXT_WEIGHT, get_device
-from src.model.custom_loss import text_accuracy_loss
+from src.model.utils import INPUT_DIR, TARGET_DIR, NUM_CHANNELS, FEATURES, NUM_EPOCHS, LEARNING_RATE, MOMENTUM, WEIGHT_DECAY, BATCH_SIZE, TEXT_WEIGHT, WIDTH, DW_EXPAND, FFN_EXPAND, ENC_BLKS, MIDDLE_BLK_NUM, DEC_BLKS, get_device
+from src.model.custom_loss import PSNRLoss
 
      
-def train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, text_weight, scaler, device): 
+def train_model(model, train_loader, optimizer, reconstruction_loss, scaler, device): 
     model.train()
     loop = tqdm(train_loader, leave=True)
     total_loss = 0
@@ -22,15 +23,9 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, text_accura
         input_images = input_images.to(device)
         target_images = target_images.to(device)
 
-        if device.type == 'cuda': 
-            with torch.autocast(device_type=str(device), dtype=torch.float16):
-                output_images = model(input_images)
-                rec_loss = reconstruction_loss(output_images, target_images) 
-            text_loss = text_weight * text_accuracy_loss(output_images, target_images).half()
-            loss = rec_loss + text_loss
-        else: 
+        with torch.autocast(device_type=str(device), dtype=torch.float16):
             output_images = model(input_images)
-            loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
+            loss = reconstruction_loss(output_images, target_images) 
 
         optimizer.zero_grad()
         scaler.scale(loss).backward()
@@ -43,7 +38,7 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, text_accura
     avg_train_loss = total_loss / len(loop)
     return avg_train_loss
 
-def validate_model(model, val_loader, reconstruction_loss, text_accuracy_loss, text_weight, device): 
+def validate_model(model, val_loader, reconstruction_loss, device): 
     model.eval()  
     total_val_loss = 0
 
@@ -53,7 +48,7 @@ def validate_model(model, val_loader, reconstruction_loss, text_accuracy_loss, t
             target_images = target_images.to(device)
 
             output_images = model(input_images)
-            loss = reconstruction_loss(output_images, target_images) + text_weight * text_accuracy_loss(output_images, target_images)
+            loss = reconstruction_loss(output_images, target_images) 
             total_val_loss += loss.item()
 
     avg_val_loss = total_val_loss / len(val_loader)
@@ -73,16 +68,25 @@ def save_checkpoint(model, optimizer, epoch, val_loss, checkpoint_dir="checkpoin
 
 def main(): 
     device = get_device()
-    model = UNet(in_channels=NUM_CHANNELS, out_channels=NUM_CHANNELS, features=FEATURES).to(device)
-    reconstruction_loss = nn.MSELoss()
+    # model = UNet(in_channels=NUM_CHANNELS, out_channels=NUM_CHANNELS, features=FEATURES).to(device)
+    model = UNetWithCBAM(img_channel=NUM_CHANNELS, 
+                         width=WIDTH, 
+                         middle_blk_num=MIDDLE_BLK_NUM, 
+                         enc_blk_nums=ENC_BLKS, 
+                         dec_blk_nums=DEC_BLKS, 
+                         dw_expand=DW_EXPAND, 
+                         ffn_expand=FFN_EXPAND,)
+    reconstruction_loss = PSNRLoss()
+
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
     scaler = torch.amp.GradScaler('cuda')
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=2)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8)
 
     num_images = len([f for f in os.listdir(INPUT_DIR) if f.endswith(('.jpg', '.png', '.jpeg', '.webp'))])
-    # num_images = 1200
+    num_images = 32
     train_indices, val_indices, test_indices = get_split_indices(num_images)
 
+    print(train_indices)
     train_loader = DataLoader(LocalImageDataset(INPUT_DIR, TARGET_DIR, train_indices), batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(LocalImageDataset(INPUT_DIR, TARGET_DIR, val_indices), batch_size=BATCH_SIZE, shuffle=True)
     test_loader = DataLoader(LocalImageDataset(INPUT_DIR, TARGET_DIR, test_indices), batch_size=BATCH_SIZE, shuffle=True)
@@ -91,8 +95,8 @@ def main():
     checkpoint_dir = "checkpoints"
 
     for epoch in range(1, NUM_EPOCHS + 1): 
-        avg_train_loss = train_model(model, train_loader, optimizer, reconstruction_loss, text_accuracy_loss, TEXT_WEIGHT, scaler, device)
-        avg_val_loss = validate_model(model, val_loader, reconstruction_loss, text_accuracy_loss, TEXT_WEIGHT, device)
+        avg_train_loss = train_model(model, train_loader, optimizer, reconstruction_loss, scaler, device)
+        avg_val_loss = validate_model(model, val_loader, reconstruction_loss, device)
         current_lr = scheduler.get_last_lr()[0]
         print(f"Epoch [{epoch}/{NUM_EPOCHS}] - Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}, LR: {current_lr:.6f}")
 
