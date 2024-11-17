@@ -8,7 +8,7 @@ TARGET_DIR = os.path.join(BASE_DIR, 'dataset', 'clear')
 NUM_CHANNELS = 1
 NUM_EPOCHS = 500
 LEARNING_RATE = 0.003
-BATCH_SIZE = 4
+BATCH_SIZE = 64
 
 # # cbam unet
 # WIDTH = 32
