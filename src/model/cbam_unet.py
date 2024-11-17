@@ -11,7 +11,7 @@ class LayerNorm2d(nn.Module):
         x = x.permute(0, 2, 3, 1)
         x = self.layer_norm(x)
         x = x.permute(0, 3, 1, 2)
-        return x
+        return x.to(x.dtype)
 
 class ChannelAttention(nn.Module): 
     def __init__(self, channels, reduction_ratio=8): 
@@ -35,7 +35,7 @@ class ChannelAttention(nn.Module):
 
         out = avg_out + max_out
         out = self.sigmoid(out).view(batch_size, channels, 1, 1)
-        return x * out
+        return (x * out).to(x.dtype)
     
 class SpatialAttention(nn.Module): 
     def __init__(self, kernel_size=7): 
@@ -50,7 +50,7 @@ class SpatialAttention(nn.Module):
         concat = torch.cat([avg_out, max_out], dim=1)
         out = self.conv(concat)
         out = self.sigmoid(out)
-        return x * out
+        return (x * out).to(x.dtype)
 
 
 class CBAMResidualBlock(nn.Module): 
@@ -175,3 +175,4 @@ class UNetWithCBAM(nn.Module):
         mod_pad_w = (self.padder_size - w % self.padder_size) % self.padder_size
         x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h))
         return x
+    

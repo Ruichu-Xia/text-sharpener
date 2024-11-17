@@ -16,20 +16,30 @@ class LocalImageDataset(Dataset):
         return len(self.indices)
     
     def __getitem__(self, idx):
-        image_name = f"Image_{self.indices[idx]}.webp"
+        image_name = f"Image_{self.indices[idx]}.png"
         input_path = os.path.join(self.input_dir, image_name)
         target_path = os.path.join(self.target_dir, image_name)
 
         input_image = self._load_image(input_path)
         target_image = self._load_image(target_path)
 
-        input_image =  torch.tensor(np.array(input_image, dtype=np.float32)).permute(2, 0, 1) / 255.0
-        target_image = torch.tensor(np.array(target_image, dtype=np.float32)).permute(2, 0, 1) / 255.0
+        input_image = torch.tensor(np.array(input_image, dtype=np.float32))
+        target_image = torch.tensor(np.array(target_image, dtype=np.float32))
+
+        if input_image.dim() == 2:
+            input_image = input_image.unsqueeze(0) 
+            target_image = target_image.unsqueeze(0) 
+        else:
+            input_image =  input_image.permute(2, 0, 1) 
+            target_image = target_image.permute(2, 0, 1) 
+        
+        input_image = input_image / 255.0 
+        target_image = target_image / 255.0
 
         return input_image, target_image
     
     def _load_image(self, image_path):
-        image = Image.open(image_path).convert("RGB")
+        image = Image.open(image_path)
         return image
 
 

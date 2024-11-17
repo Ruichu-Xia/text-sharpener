@@ -1,5 +1,7 @@
 /data/
+/dataset/
 /scratch/
 /checkpoints/
 .DS_Store
 **/__pycache__/
+/src/legacy_data_pipeline/

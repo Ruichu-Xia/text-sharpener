@@ -5,16 +5,15 @@ import os
 # INPUT_DIR = '../data/blurred/'
 # TARGET_DIR = '../data/processed/'
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-INPUT_DIR = os.path.join(BASE_DIR, 'data', 'blurred')
-TARGET_DIR = os.path.join(BASE_DIR, 'data', 'processed')
-NUM_CHANNELS = 3
+INPUT_DIR = os.path.join(BASE_DIR, 'dataset', 'blurred')
+TARGET_DIR = os.path.join(BASE_DIR, 'dataset', 'clear')
+NUM_CHANNELS = 1
 FEATURES = [64, 128, 256, 512]
-NUM_EPOCHS = 40
+NUM_EPOCHS = 500
 LEARNING_RATE = 0.003
 MOMENTUM = 0.9
 WEIGHT_DECAY = 0
 BATCH_SIZE = 4
-TEXT_WEIGHT = 1
 
 # cbam unet
 WIDTH = 32
