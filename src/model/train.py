@@ -1,17 +1,7 @@
-import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 import os
 
-
-from src.model.unet import UNet
-from src.model.cbam_unet import UNetWithCBAM, SimpleDeblurCNN
-from src.data.dataset import LocalImageDataset, get_split_indices
-from src.model.utils import INPUT_DIR, TARGET_DIR, NUM_CHANNELS, FEATURES, NUM_EPOCHS, LEARNING_RATE, MOMENTUM, WEIGHT_DECAY, BATCH_SIZE, WIDTH, DW_EXPAND, FFN_EXPAND, ENC_BLKS, MIDDLE_BLK_NUM, DEC_BLKS, get_device
-from src.model.custom_loss import PSNRLoss
 
      
 def train_model(model, train_loader, optimizer, reconstruction_loss, scaler, device): 
@@ -66,48 +56,3 @@ def save_checkpoint(model, optimizer, epoch, val_loss, checkpoint_dir="checkpoin
     print(f"Model checkpoint saved at {checkpoint_path}")
 
     
-def main(): 
-    device = get_device()
-    # model = UNet(in_channels=NUM_CHANNELS, out_channels=NUM_CHANNELS, features=FEATURES).to(device)
-    # model = UNetWithCBAM(img_channel=NUM_CHANNELS, 
-    #                      width=WIDTH, 
-    #                      middle_blk_num=MIDDLE_BLK_NUM, 
-    #                      enc_blk_nums=ENC_BLKS, 
-    #                      dec_blk_nums=DEC_BLKS, 
-    #                      dw_expand=DW_EXPAND, 
-    #                      ffn_expand=FFN_EXPAND,)
-    model = SimpleDeblurCNN()
-    model = model.to(device)
-    reconstruction_loss = nn.L1Loss()
-
-    # optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY)
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    scaler = torch.amp.GradScaler('cuda')
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=50)
-
-    # num_images = len([f for f in os.listdir(INPUT_DIR) if f.endswith(('.jpg', '.png', '.jpeg', '.webp'))])
-    num_images = 3
-    train_indices, val_indices, test_indices = get_split_indices(num_images)
-
-    print(train_indices)
-    train_loader = DataLoader(LocalImageDataset(INPUT_DIR, TARGET_DIR, train_indices), batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(LocalImageDataset(INPUT_DIR, TARGET_DIR, val_indices), batch_size=BATCH_SIZE, shuffle=True)
-    test_loader = DataLoader(LocalImageDataset(INPUT_DIR, TARGET_DIR, test_indices), batch_size=BATCH_SIZE, shuffle=True)
-
-    best_val_loss = float('inf')
-    checkpoint_dir = "checkpoints"
-
-    for epoch in range(1, NUM_EPOCHS + 1): 
-        avg_train_loss = train_model(model, train_loader, optimizer, reconstruction_loss, scaler, device)
-        avg_val_loss = validate_model(model, val_loader, reconstruction_loss, device)
-        current_lr = scheduler.get_last_lr()[0]
-        print(f"Epoch [{epoch}/{NUM_EPOCHS}] - Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}, LR: {current_lr:.6f}")
-
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
-            save_checkpoint(model, optimizer, epoch, best_val_loss, checkpoint_dir)
-        
-        scheduler.step(avg_val_loss)
-
-if __name__ == "__main__":
-    main()
