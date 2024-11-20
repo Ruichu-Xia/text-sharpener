@@ -55,7 +55,7 @@ def train_model(model, train_loader, optimizer, reconstruction_loss, scaler, gra
         input_images = input_images.to(device)
         target_images = target_images.to(device)
 
-        with torch.autocast(device_type="cuda", dtype=torch.float16):
+        with torch.autocast(device_type=str(device), dtype=torch.float16):
             output_images = model(input_images)
             loss = combined_loss(output_images, target_images, reconstruction_loss, edge_weight)
 
