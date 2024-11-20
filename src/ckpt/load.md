@@ -18,7 +18,7 @@ model = model.to(device)
 ```
 
 ```
-ckpt_path = "./ckpt/ckpt_700"
+ckpt_path = "path/to/checkpoint"
 checkpoint = torch.load(ckpt_path)
 model.load_state_dict(checkpoint["model_state_dict"])
 ```
