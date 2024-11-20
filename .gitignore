@@ -2,6 +2,8 @@
 /dataset/
 /scratch/
 /checkpoints/
+/saved_models/
+/results/
 .DS_Store
 **/__pycache__/
 /src/legacy_data_pipeline/
