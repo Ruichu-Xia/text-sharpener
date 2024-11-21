@@ -43,8 +43,12 @@ class LocalImageDataset(Dataset):
         return image
 
 
-def get_split_indices(num_images, val_ratio=0.2, test_ratio=0.1, seed=42): 
-    indices = np.arange(0, num_images)
-    train_val_indices, test_indices = train_test_split(indices, test_size=test_ratio, random_state=seed)
-    train_indices, val_indices = train_test_split(train_val_indices, test_size=val_ratio / (1 - test_ratio), random_state=seed)
-    return train_indices, val_indices, test_indices
+def get_split_indices(num_images, test_indices, val_ratio=0.2, seed=42): 
+    all_indices = np.arange(0, num_images)
+    train_val_indices = np.setdiff1d(all_indices, test_indices)
+    train_indices, val_indices = train_test_split(
+        train_val_indices, 
+        test_size=val_ratio, 
+        random_state=seed
+    )
+    return train_indices, val_indices
