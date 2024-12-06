@@ -35,7 +35,6 @@ class UNetV2(nn.Module):
         
         # Up part of UNet
         for feature in reversed(features):
-            # TODO: check if bilinear upsampling is better
             self.ups.append(nn.ConvTranspose2d(feature * 2, feature, kernel_size=2, stride=2))
             self.ups.append(DoubleResConv(feature * 2, feature))
 
