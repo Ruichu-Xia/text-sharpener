@@ -54,6 +54,25 @@ Improved from **16.97 dB** to **27.21 dB** on the test set.
 
 <a name="usage"></a>
 ## Usage
+### Data Preparation 
+`src/data/collect.py`: Collect text images from PDFs. 
 
+`src/data/blur.py`: Generate synthetic blurry images.
+### Models
+`UNetV2.py`: Best-performing model located in `src/model`. Other attempted models like `BasicNet`, `BetterNet`, and `SharpNet` are also included.
+### Training 
+`src/notebooks/train.ipynb`: Notebook to train models. Ran on Google Colab with T4 GPU.
+### Evaluation 
+`src/notebooks/evaluation.ipynb`: Notebook to evaluate and visualize model performance.
+### Pretrained Model
+ Pretrained `UNetV2` model available in `src/ckpt/unetv2_1000`. Test it with:
+ ```
+import torch
+from src.model.UNetV2 import UNetV2
 
+ckpt = torch.load("src/ckpt/unetv2_1000", map_location=torch.device('cpu'))
+model = UNetV2(in_channels=1, out_channels=1, features=[64, 128])
+model.load_state_dict(ckpt["model_state_dict"])
+model.eval()
+```
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
