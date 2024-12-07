@@ -16,6 +16,8 @@ This repository contains the implementation of a Convolutional Neural Network (C
       <a href="#architecture">Architecture</a>
     <li>
       <a href="#results">Results</a>
+    <li>
+      <a href="#usage">Usage</a>
   <ol>
 </details>
 
@@ -49,6 +51,9 @@ The model builds upon the **U-Net** architecture with modifications to enhance p
 Improved from **16.97 dB** to **27.21 dB** on the test set.
 ![Results](./src/visualizations/unetv2_result_visualization.png)
 
+
+<a name="usage"></a>
+## Usage
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
