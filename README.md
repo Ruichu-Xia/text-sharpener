@@ -11,7 +11,7 @@ This repository contains the implementation of a Convolutional Neural Network (C
     <li>
       <a href="#overview">Overview</a>
     <li>
-      <a href="dataset">Dataset</a>
+      <a href="#dataset">Results</a>
     <li>
       <a href="#architecture">Architecture</a>
     <li>
